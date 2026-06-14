@@ -1,5 +1,9 @@
+using PausDeGiz.App.Controllers;
+using PausDeGiz.App.Models;
+using PausDeGiz.App.Views;
 using System;
 using System.Collections.Generic;
+
 
 namespace PausDeGiz
 {
@@ -139,6 +143,18 @@ namespace PausDeGiz
             Console.WriteLine("  Demonstração concluída. Acoplamento Fraco Validado! ");
             Console.WriteLine("======================================================");
             Console.ReadLine();
+
+            Console.WriteLine("\n===== MVC REAL =====");
+
+            IInventarioView view = new ConsoleView();
+            IInventarioModel modelMVC = new GestorInventario();
+            PausDeGiz.App.Persistence.ISaveStateManager persistencia =
+    new PausDeGiz.App.Persistence.PersistenciaJson();
+
+            MainController controller =
+                new MainController(view, modelMVC, persistencia);
+
+            controller.Iniciar();
         }
     }
 }

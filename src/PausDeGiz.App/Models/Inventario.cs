@@ -4,6 +4,25 @@ namespace PausDeGiz.App.Models
 {
     public class Inventario
     {
-        public List<Giz> Gizes { get; set; } = new List<Giz>();
+        // lista interna (não exposta diretamente)
+        private readonly List<Giz> gizes = new List<Giz>();
+
+        // adicionar giz
+        public void AdicionarGiz(Giz giz)
+        {
+            gizes.Add(giz);
+        }
+
+        // obter lista (apenas leitura externa)
+        public List<Giz> ObterGizes()
+        {
+            return new List<Giz>(gizes);
+        }
+
+        // opcional (útil para carregamento JSON)
+        public void Limpar()
+        {
+            gizes.Clear();
+        }
     }
 }

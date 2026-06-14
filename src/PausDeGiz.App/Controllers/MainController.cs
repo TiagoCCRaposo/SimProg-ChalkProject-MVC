@@ -2,13 +2,25 @@ using System;
 using Newtonsoft.Json;
 using PausDeGiz.App.Models;
 using PausDeGiz.App.Views;
+using PausDeGiz.App.Persistence;
 
 namespace PausDeGiz.App.Controllers
 {
     public class MainController
     {
-        private ConsoleView view = new ConsoleView();
-        private Inventario inventario = new Inventario();
+        private readonly IInventarioView view;
+        private readonly IInventarioModel model;
+        private readonly PausDeGiz.App.Persistence.ISaveStateManager persistencia;
+
+        public MainController(
+            IInventarioView view,
+            IInventarioModel model,
+            PausDeGiz.App.Persistence.ISaveStateManager persistencia)
+        {
+            this.view = view;
+            this.model = model;
+            this.persistencia = persistencia;
+        }
 
         public void Iniciar()
         {
@@ -66,15 +78,18 @@ namespace PausDeGiz.App.Controllers
             }
 
             Giz giz = new Giz { Cor = cor, Quantidade = quantidade };
-            inventario.Gizes.Add(giz);
+            model.AdicionarGiz(giz);
 
             view.MostrarMensagem("Giz adicionado!");
         }
 
         private void Guardar()
         {
-            string json = JsonConvert.SerializeObject(inventario, Formatting.Indented);
-            view.GuardarFicheiro(json);
+            var lista = model.ObterGizes();
+
+            string json = JsonConvert.SerializeObject(lista, Formatting.Indented);
+
+            persistencia.Gravar(json);
 
             view.MostrarMensagem("Inventário guardado!");
         }
@@ -83,7 +98,7 @@ namespace PausDeGiz.App.Controllers
         {
             try
             {
-                string json = view.LerFicheiro();
+                string json = persistencia.Carregar();
 
                 if (string.IsNullOrEmpty(json))
                 {
@@ -91,28 +106,35 @@ namespace PausDeGiz.App.Controllers
                     return;
                 }
 
-                inventario = JsonConvert.DeserializeObject<Inventario>(json) ?? new Inventario();
+                var lista = JsonConvert.DeserializeObject<List<Giz>>(json);
+
+                if (lista != null)
+                {
+                    foreach (var giz in lista)
+                    {
+                        model.AdicionarGiz(giz);
+                    }
+                }
 
                 view.MostrarMensagem("Inventário carregado!");
             }
             catch (Exception)
             {
-                view.MostrarMensagem("Erro ao carregar ficheiro JSON. O ficheiro pode estar corrompido.");
-                inventario = new Inventario(); // evita crash
+                view.MostrarMensagem("Erro ao carregar ficheiro JSON.");
             }
         }
 
         private void ListarGizes()
         {
-            if (inventario.Gizes.Count == 0)
+            var lista = model.ObterGizes();
+
+            if (lista.Count == 0)
             {
                 view.MostrarMensagem("Inventário vazio.");
                 return;
             }
 
-            view.MostrarMensagem("Lista de Gizes:");
-
-            foreach (var giz in inventario.Gizes)
+            foreach (var giz in lista)
             {
                 view.MostrarMensagem($"Cor: {giz.Cor}, Quantidade: {giz.Quantidade}");
             }
